@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>MetaAnalysis 元析智能 · 自动化报告生成</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg-page:#f0f2f5;--bg-sidebar:#fff;--bg-card:#fff;--border:#e8eaed;
+      --primary:#3a6fd8;--primary-lt:#eef2fc;
+      --text-main:#1a1f2e;--text-sub:#6b7280;--text-muted:#9ca3af;
+      --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+      --radius:8px;--shadow-sm:0 1px 3px rgba(0,0,0,.06);
+      --sidebar-w:220px;--topbar-h:56px;
+      --font:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    }
+    body{font-family:var(--font);background:var(--bg-page);color:var(--text-main);display:flex;min-height:100vh;}
+
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;}
+    .sidebar-logo{height:var(--topbar-h);display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--border);}
+    .logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;}
+    .logo-text{font-size:15px;font-weight:600;}.logo-sub{font-size:11px;color:var(--text-muted);margin-top:1px;}
+    .nav-section{padding:12px 0;}
+    .nav-section-title{font-size:11px;color:var(--text-muted);font-weight:500;letter-spacing:.06em;padding:0 20px 6px;text-transform:uppercase;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13.5px;color:var(--text-sub);cursor:pointer;transition:background .15s,color .15s;position:relative;}
+    .nav-item:hover{background:var(--primary-lt);color:var(--primary);}
+    .nav-item.active{background:var(--primary-lt);color:var(--primary);font-weight:600;}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--primary);border-radius:0 3px 3px 0;}
+    .nav-icon{width:16px;text-align:center;font-size:14px;flex-shrink:0;}
+    .sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+    .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-lt);border:1.5px solid var(--primary);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:13px;font-weight:600;}
+    .user-name{font-size:13px;font-weight:500;}.user-role{font-size:11px;color:var(--text-muted);}
+
+    .main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+    .topbar{height:var(--topbar-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:90;}
+    .breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-sub);}
+    .breadcrumb span{color:var(--text-muted);}.breadcrumb b{color:var(--text-main);font-weight:500;}
+    .topbar-right{margin-left:auto;display:flex;gap:10px;}
+    .btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:12.5px;color:var(--text-sub);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+    .btn:hover{background:var(--primary-lt);color:var(--primary);}
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+    .btn-success{background:var(--success);color:#fff;border-color:var(--success);}
+
+    /* layout: left settings | center preview | right export */
+    .report-layout{display:grid;grid-template-columns:280px 1fr 240px;gap:0;flex:1;height:calc(100vh - var(--topbar-h) - 32px);overflow:hidden;}
+
+    /* left settings */
+    .settings-panel{background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+    .sp-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13.5px;font-weight:600;}
+    .sp-section{padding:14px 16px;border-bottom:1px solid var(--border);}
+    .sps-title{font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:10px;}
+
+    /* template cards */
+    .tpl-grid{display:flex;flex-direction:column;gap:8px;}
+    .tpl-card{border:1.5px solid var(--border);border-radius:6px;padding:10px 12px;cursor:pointer;transition:all .15s;display:flex;gap:10px;align-items:flex-start;}
+    .tpl-card:hover{border-color:var(--primary);background:var(--primary-lt);}
+    .tpl-card.active{border-color:var(--primary);background:var(--primary-lt);}
+    .tpl-icon{width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+    .tpl-name{font-size:13px;font-weight:500;color:var(--text-main);}
+    .tpl-desc{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4;}
+
+    /* content checklist */
+    .content-list{display:flex;flex-direction:column;gap:6px;}
+    .cl-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-main);}
+    .cl-item input[type="checkbox"]{accent-color:var(--primary);width:14px;height:14px;cursor:pointer;}
+    .cl-sub{font-size:11px;color:var(--text-muted);padding-left:22px;margin-top:-2px;}
+
+    .param-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .param-label{font-size:12.5px;color:var(--text-sub);width:80px;flex-shrink:0;}
+    .param-input{flex:1;height:30px;border:1px solid var(--border);border-radius:5px;padding:0 8px;font-size:12.5px;outline:none;}
+    .param-input:focus{border-color:var(--primary);}
+    .param-select{flex:1;height:30px;border:1px solid var(--border);border-radius:5px;padding:0 8px;font-size:12.5px;outline:none;background:#fff;cursor:pointer;}
+
+    .gen-btn{width:100%;height:40px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
+    .gen-btn:hover{background:#2f5cc0;}
+
+    /* center preview */
+    .preview-panel{background:var(--bg-page);display:flex;flex-direction:column;overflow:hidden;}
+    .pp-toolbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;}
+    .pp-title{font-size:13px;font-weight:600;flex:1;}
+    .preview-wrap{flex:1;overflow-y:auto;padding:24px;display:flex;justify-content:center;}
+
+    /* report paper */
+    .report-paper{background:#fff;width:680px;min-height:880px;border-radius:4px;box-shadow:0 2px 20px rgba(0,0,0,.1);padding:52px 60px;position:relative;}
+
+    /* report content styles */
+    .rp-cover-tag{display:inline-block;background:var(--primary-lt);color:var(--primary);border-radius:3px;padding:3px 10px;font-size:12px;font-weight:500;margin-bottom:20px;}
+    .rp-title{font-size:24px;font-weight:700;color:var(--text-main);line-height:1.4;margin-bottom:8px;}
+    .rp-subtitle{font-size:14px;color:var(--text-sub);margin-bottom:4px;}
+    .rp-meta{font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:12px;margin-top:16px;display:flex;justify-content:space-between;}
+    .rp-divider{border:none;border-top:1.5px solid var(--border);margin:20px 0;}
+    .rp-h2{font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:8px;padding-left:10px;border-left:3px solid var(--primary);}
+    .rp-h3{font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:6px;margin-top:10px;}
+    .rp-p{font-size:13px;color:var(--text-main);line-height:1.9;margin-bottom:10px;}
+    .rp-highlight{background:#fff9c4;padding:1px 3px;border-radius:2px;}
+    .rp-key{font-weight:600;color:var(--primary);}
+
+    /* inline chart placeholder in report */
+    .rp-chart{background:#f8faff;border:1px solid #dce7f9;border-radius:4px;height:120px;display:flex;align-items:center;justify-content:center;margin:12px 0;font-size:12px;color:var(--text-muted);}
+    .rp-chart-bars{display:flex;align-items:flex-end;gap:5px;height:70px;padding:0 12px;}
+    .rp-bar{border-radius:2px 2px 0 0;}
+
+    /* kpi row */
+    .kpi-row{display:flex;gap:12px;margin:12px 0;}
+    .kpi-box{flex:1;background:#f8faff;border:1px solid #dce7f9;border-radius:4px;padding:10px 12px;}
+    .kpi-val{font-size:18px;font-weight:700;color:var(--primary);}
+    .kpi-label{font-size:11px;color:var(--text-muted);margin-top:1px;}
+
+    .risk-box{background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:12px 14px;margin:12px 0;font-size:12.5px;color:#92400e;line-height:1.7;}
+    .suggest-box{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:4px;padding:12px 14px;margin:12px 0;font-size:12.5px;color:#064e3b;line-height:1.7;}
+
+    /* right export */
+    .export-panel{background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:0;}
+    .ep-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13.5px;font-weight:600;}
+    .ep-section{padding:12px 16px;border-bottom:1px solid var(--border);}
+    .eps-title{font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:8px;}
+    .format-btns{display:flex;flex-direction:column;gap:7px;}
+    .format-btn{height:38px;border:1.5px solid var(--border);border-radius:6px;background:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--text-sub);transition:all .15s;}
+    .format-btn:hover{border-color:var(--primary);background:var(--primary-lt);color:var(--primary);}
+    .format-btn.word{border-color:#2b6cb0;color:#2b6cb0;background:#ebf8ff;}
+    .format-btn.pdf{border-color:#e53e3e;color:#e53e3e;background:#fff5f5;}
+    .format-btn.ppt{border-color:#dd6b20;color:#dd6b20;background:#fffaf0;}
+    .format-btn.excel{border-color:#276749;color:#276749;background:#f0fff4;}
+    .history-list{padding:4px 0;}
+    .hist-item{padding:8px 16px;font-size:12.5px;border-bottom:1px solid var(--border);cursor:pointer;}
+    .hist-item:last-child{border-bottom:none;}
+    .hist-item:hover{background:var(--primary-lt);}
+    .hist-name{color:var(--text-main);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .hist-meta{font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;gap:6px;}
+    .tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;}
+    .tag-blue{background:#eef2fc;color:var(--primary);}
+    .tag-green{background:#ecfdf5;color:var(--success);}
+
+    .statusbar{height:32px;background:#f8f9fa;border-top:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:24px;font-size:11px;color:var(--text-muted);}
+    .status-dot{width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px;}
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">MA</div>
+    <div><div class="logo-text">MetaAnalysis</div><div class="logo-sub">元析智能</div></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-item"><span class="nav-icon">⊞</span>工作台首页</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">数据中心</div>
+    <div class="nav-item"><span class="nav-icon">↑</span>数据接入</div>
+    <div class="nav-item"><span class="nav-icon">☰</span>数据管理</div>
+    <div class="nav-item"><span class="nav-icon">✦</span>智能清洗</div>
+    <div class="nav-item"><span class="nav-icon">≡</span>口径管理</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">智能分析</div>
+    <div class="nav-item"><span class="nav-icon">💬</span>AI智能问答</div>
+    <div class="nav-item"><span class="nav-icon">⚡</span>探索分析</div>
+    <div class="nav-item"><span class="nav-icon">⊕</span>归因分析</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">统计建模</div>
+    <div class="nav-item"><span class="nav-icon">∑</span>描述统计</div>
+    <div class="nav-item"><span class="nav-icon">≈</span>推断统计</div>
+    <div class="nav-item"><span class="nav-icon">∿</span>相关与回归</div>
+    <div class="nav-item"><span class="nav-icon">⌁</span>时序分析</div>
+    <div class="nav-item"><span class="nav-icon">◎</span>聚类挖掘</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">输出中心</div>
+    <div class="nav-item"><span class="nav-icon">▤</span>可视化看板</div>
+    <div class="nav-item active"><span class="nav-icon">📄</span>报告生成</div>
+    <div class="nav-item"><span class="nav-icon">🔔</span>监控预警</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">赫</div>
+    <div><div class="user-name">赫训显</div><div class="user-role">个人版 · 试用中</div></div>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="breadcrumb">
+      <span>首页</span>›<span>输出中心</span>›<b>自动化报告生成</b>
+    </div>
+    <div class="topbar-right">
+      <button class="btn">📋 报告历史</button>
+      <button class="btn">✏ 二次编辑</button>
+      <button class="btn btn-success">⬇ 一键导出</button>
+    </div>
+  </header>
+
+  <div class="report-layout">
+
+    <!-- 左：生成设置 -->
+    <div class="settings-panel">
+      <div class="sp-header">报告生成设置</div>
+
+      <div class="sp-section">
+        <div class="sps-title">报告模板</div>
+        <div class="tpl-grid">
+          <div class="tpl-card active">
+            <div class="tpl-icon" style="background:#eef2fc;">📊</div>
+            <div>
+              <div class="tpl-name">商务汇报版</div>
+              <div class="tpl-desc">适合企业内部汇报、管理层决策，图文并茂，结论导向</div>
+            </div>
+          </div>
+          <div class="tpl-card">
+            <div class="tpl-icon" style="background:#ecfdf5;">📄</div>
+            <div>
+              <div class="tpl-name">简约分析版</div>
+              <div class="tpl-desc">适合轻量数据分析，快速生成，突出核心数据</div>
+            </div>
+          </div>
+          <div class="tpl-card">
+            <div class="tpl-icon" style="background:#fffbeb;">🎓</div>
+            <div>
+              <div class="tpl-name">学术论文版</div>
+              <div class="tpl-desc">含统计方法说明、显著性标注、参考文献格式</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sp-section">
+        <div class="sps-title">报告内容配置</div>
+        <div class="content-list">
+          <div class="cl-item"><input type="checkbox" checked/> 数据概况摘要</div>
+          <div class="cl-item"><input type="checkbox" checked/> 清洗处理说明</div>
+          <div class="cl-item"><input type="checkbox" checked/> 可视化图表（已选3张）</div>
+          <div class="cl-item"><input type="checkbox" checked/> 统计分析结论</div>
+          <div class="cl-item"><input type="checkbox" checked/> 异常数据洞察</div>
+          <div class="cl-item"><input type="checkbox" checked/> 业务优化建议</div>
+          <div class="cl-item"><input type="checkbox" checked/> 风险提示</div>
+          <div class="cl-item"><input type="checkbox"/> AI问答对话记录</div>
+        </div>
+      </div>
+
+      <div class="sp-section">
+        <div class="sps-title">基本信息</div>
+        <div class="param-row">
+          <div class="param-label">报告标题</div>
+          <input class="param-input" value="Q1销售数据综合分析报告"/>
+        </div>
+        <div class="param-row">
+          <div class="param-label">报告作者</div>
+          <input class="param-input" value="赫训显"/>
+        </div>
+        <div class="param-row">
+          <div class="param-label">报告日期</div>
+          <input class="param-input" value="2026-05-13"/>
+        </div>
+        <div class="param-row">
+          <div class="param-label">摘要语言</div>
+          <select class="param-select"><option>中文（简体）</option><option>English</option></select>
+        </div>
+        <button class="gen-btn">⚡ 一键生成报告</button>
+      </div>
+    </div>
+
+    <!-- 中：报告预览 -->
+    <div class="preview-panel">
+      <div class="pp-toolbar">
+        <div class="pp-title">报告预览 · 实时渲染</div>
+        <button class="btn" style="height:28px;font-size:12px;">缩小</button>
+        <button class="btn" style="height:28px;font-size:12px;">100%</button>
+        <button class="btn" style="height:28px;font-size:12px;">放大</button>
+        <span style="font-size:12px;color:var(--text-muted);">第1页，共4页</span>
+      </div>
+      <div class="preview-wrap">
+        <div class="report-paper">
+
+          <!-- 封面区 -->
+          <div class="rp-cover-tag">商务汇报版 · MetaAnalysis 元析智能</div>
+          <div class="rp-title">Q1销售数据综合分析报告</div>
+          <div class="rp-subtitle">数据集：Q1销售数据汇总.xlsx &nbsp;|&nbsp; 分析周期：2026年1月—3月</div>
+          <div class="rp-meta">
+            <span>作者：赫训显</span>
+            <span>生成日期：2026-05-13</span>
+            <span>数据行数：2,847 · 18字段</span>
+          </div>
+
+          <hr class="rp-divider"/>
+
+          <!-- KPI摘要 -->
+          <div class="rp-h2">一、核心数据摘要</div>
+          <div class="kpi-row">
+            <div class="kpi-box"><div class="kpi-val">¥1,240万</div><div class="kpi-label">Q1总销售额</div></div>
+            <div class="kpi-box"><div class="kpi-val">2,847</div><div class="kpi-label">有效订单数</div></div>
+            <div class="kpi-box"><div class="kpi-val">¥4,358</div><div class="kpi-label">平均客单价</div></div>
+            <div class="kpi-box"><div class="kpi-val">24.9%</div><div class="kpi-label">综合利润率</div></div>
+          </div>
+
+          <!-- 数据清洗说明 -->
+          <div class="rp-h2">二、数据处理说明</div>
+          <div class="rp-p">原始数据集共 <span class="rp-key">58,342 行</span>，经智能清洗引擎处理后，识别并修复缺失值 <span class="rp-key">1,847 处</span>、异常值 <span class="rp-key">342 处</span>、重复行 <span class="rp-key">56 行</span>，数据质量评分由清洗前 72 分提升至 <span class="rp-key">94 分</span>。所有清洗操作已留存操作日志，支持原路回溯。</div>
+
+          <!-- 区域分析 -->
+          <div class="rp-h2">三、区域销售表现分析</div>
+          <div class="rp-h3">3.1 各区域销售额对比</div>
+          <div class="rp-chart">
+            <div class="rp-chart-bars">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                <span style="font-size:10px;color:#3a6fd8;font-weight:600;">482万</span>
+                <div class="rp-bar" style="width:40px;height:80px;background:#3a6fd8;opacity:.85;"></div>
+                <span style="font-size:10px;color:#888;">华东</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                <span style="font-size:10px;color:#60a5fa;font-weight:600;">324万</span>
+                <div class="rp-bar" style="width:40px;height:54px;background:#60a5fa;"></div>
+                <span style="font-size:10px;color:#888;">华北</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                <span style="font-size:10px;color:#93c5fd;font-weight:600;">299万</span>
+                <div class="rp-bar" style="width:40px;height:50px;background:#93c5fd;"></div>
+                <span style="font-size:10px;color:#888;">华南</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                <span style="font-size:10px;color:#bfdbfe;font-weight:600;">135万</span>
+                <div class="rp-bar" style="width:40px;height:22px;background:#bfdbfe;border:1px solid #93c5fd;"></div>
+                <span style="font-size:10px;color:#888;">西部</span>
+              </div>
+            </div>
+          </div>
+          <div class="rp-p">华东区以 <span class="rp-key">¥482万</span> 占总销售额 <span class="rp-highlight">38.9%</span>，稳居首位。西部区仅 <span class="rp-key">¥135万</span>，占比 10.9%，与华东差距 <span class="rp-key">2.57倍</span>。</div>
+
+          <!-- 风险提示 -->
+          <div class="rp-h2">四、风险提示</div>
+          <div class="risk-box">
+            ⚠ <strong>利润异常：</strong>profit 字段存在负值（最小 -¥234），共 23 条记录，建议核查成本核算规则或超额折扣订单。<br/>
+            ⚠ <strong>西部区销售萎缩风险：</strong>西部线上渠道占比仅 18%，若不及时补充，Q2可能继续下滑。
+          </div>
+
+          <!-- 业务建议 -->
+          <div class="rp-h2">五、业务优化建议</div>
+          <div class="suggest-box">
+            ✅ <strong>短期（1个月内）：</strong>优先清查 23 条负利润订单，核实成本录入。<br/>
+            ✅ <strong>中期（1-3个月）：</strong>西部区重点铺设线上销售渠道，目标将线上占比提升至 35%+。<br/>
+            ✅ <strong>长期（季度规划）：</strong>加强西部区销售人员配置，参照华东覆盖密度补充 3-4 名地区销售代表。
+          </div>
+
+          <hr class="rp-divider"/>
+          <div style="font-size:11px;color:var(--text-muted);text-align:center;">本报告由 MetaAnalysis 元析智能自动生成 · 2026-05-13 · 数据计算口径已锁定，结论可溯源</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：导出面板 -->
+    <div class="export-panel">
+      <div class="ep-header">导出设置</div>
+      <div class="ep-section">
+        <div class="eps-title">导出格式</div>
+        <div class="format-btns">
+          <button class="format-btn word">📝 Word (.docx)</button>
+          <button class="format-btn pdf">📄 PDF (.pdf)</button>
+          <button class="format-btn ppt">📊 PPT (.pptx)</button>
+          <button class="format-btn excel">📋 Excel数据表</button>
+        </div>
+      </div>
+      <div class="ep-section">
+        <div class="eps-title">页面设置</div>
+        <div style="font-size:12.5px;color:var(--text-sub);display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;"><span>纸张</span><span>A4</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>方向</span><span>纵向</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>字号</span><span>正文 12pt</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>总页数</span><span>4 页</span></div>
+        </div>
+      </div>
+      <div class="ep-section">
+        <div class="eps-title">历史报告</div>
+        <div class="history-list">
+          <div class="hist-item">
+            <div class="hist-name">Q1销售分析报告_商务版</div>
+            <div class="hist-meta"><span class="tag tag-blue">PDF</span><span>05-12</span></div>
+          </div>
+          <div class="hist-item">
+            <div class="hist-name">市场调研聚类分析报告</div>
+            <div class="hist-meta"><span class="tag tag-blue">Word</span><span>05-10</span></div>
+          </div>
+          <div class="hist-item">
+            <div class="hist-name">用户行为统计报告</div>
+            <div class="hist-meta"><span class="tag tag-blue">PPT</span><span>05-08</span></div>
+          </div>
+          <div class="hist-item">
+            <div class="hist-name">财务数据描述统计</div>
+            <div class="hist-meta"><span class="tag tag-green">Excel</span><span>05-06</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="statusbar">
+    <span><span class="status-dot"></span>报告引擎就绪</span>
+    <span>当前报告：4页</span>
+    <span>数据来源：Q1销售数据 · 2,847行</span>
+    <span>已自动生成结论 · 可直接导出</span>
+    <span style="margin-left:auto;">MetaAnalysis v0.1.0-MVP</span>
+  </footer>
+</div>
+
+</body>
+</html>

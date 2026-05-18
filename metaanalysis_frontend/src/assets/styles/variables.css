@@ -1,0 +1,20 @@
+:root {
+  --primary: #3a6fd8;
+  --primary-light: #5a8af0;
+  --primary-dark: #2a55a8;
+  --success: #52c41a;
+  --warning: #faad14;
+  --danger: #ff4d4f;
+  --info: #909399;
+  --bg-color: #f5f7fa;
+  --card-bg: #ffffff;
+  --text-primary: #303133;
+  --text-regular: #606266;
+  --text-secondary: #909399;
+  --border-color: #e4e7ed;
+  --sidebar-width: 220px;
+  --header-height: 56px;
+  --footer-height: 36px;
+  --border-radius: 6px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+}

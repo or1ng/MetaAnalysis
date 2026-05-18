@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>MetaAnalysis 元析智能 · 原型导航</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}
+    .header{text-align:center;margin-bottom:36px;}
+    .logo{display:inline-flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .logo-icon{width:40px;height:40px;background:#3a6fd8;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;}
+    h1{font-size:22px;font-weight:700;color:#1a1f2e;}
+    .subtitle{font-size:14px;color:#6b7280;margin-top:4px;}
+    .badge{display:inline-block;background:#eef2fc;color:#3a6fd8;border-radius:4px;padding:3px 10px;font-size:12px;font-weight:500;margin-top:8px;}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:900px;width:100%;}
+    .card{background:#fff;border:1px solid #e8eaed;border-radius:10px;padding:20px;cursor:pointer;text-decoration:none;display:block;transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+    .card:hover{border-color:#3a6fd8;box-shadow:0 4px 16px rgba(58,111,216,.15);transform:translateY(-2px);}
+    .card-num{font-size:11px;font-weight:600;color:#9ca3af;margin-bottom:8px;letter-spacing:.05em;}
+    .card-icon{font-size:26px;margin-bottom:10px;}
+    .card-title{font-size:14px;font-weight:600;color:#1a1f2e;margin-bottom:4px;}
+    .card-desc{font-size:12px;color:#6b7280;line-height:1.5;}
+    .card-tag{display:inline-block;background:#eef2fc;color:#3a6fd8;border-radius:3px;padding:2px 7px;font-size:10px;font-weight:500;margin-top:8px;}
+    .footer{margin-top:36px;font-size:12px;color:#9ca3af;text-align:center;}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">MA</div>
+      <h1>MetaAnalysis 元析智能</h1>
+    </div>
+    <div class="subtitle">MVP一期 · 8张低保真原型页面 · 商务极简B端风格</div>
+    <div class="badge">点击卡片在新标签页打开对应原型</div>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="page1-dashboard.html" target="_blank">
+      <div class="card-num">PAGE 01</div>
+      <div class="card-icon">⊞</div>
+      <div class="card-title">工作台首页</div>
+      <div class="card-desc">数据资产概览、快捷入口、最近项目、系统通知、功能推荐</div>
+      <div class="card-tag">已完成</div>
+    </a>
+    <a class="card" href="page2-data-upload.html" target="_blank">
+      <div class="card-num">PAGE 02</div>
+      <div class="card-icon">📂</div>
+      <div class="card-title">数据上传与管理</div>
+      <div class="card-desc">拖拽上传、数据集列表、状态管理、预览操作</div>
+      <div class="card-tag">已完成</div>
+    </a>
+    <a class="card" href="page3-data-clean.html" target="_blank">
+      <div class="card-num">PAGE 03</div>
+      <div class="card-icon">✦</div>
+      <div class="card-title">智能数据清洗</div>
+      <div class="card-desc">三栏布局：字段列表、数据预览、清洗操作面板</div>
+      <div class="card-tag">已完成</div>
+    </a>
+    <a class="card" href="page4-ai-chat.html" target="_blank">
+      <div class="card-num">PAGE 04</div>
+      <div class="card-icon">💬</div>
+      <div class="card-title">AI智能问答分析</div>
+      <div class="card-desc">对话聊天界面、推理链展示、可视化结果返回</div>
+      <div class="card-tag">已完成</div>
+    </a>
+    <a class="card" href="page5-statistics.html" target="_blank">
+      <div class="card-num">PAGE 05</div>
+      <div class="card-icon">∑</div>
+      <div class="card-title">高阶统计分析</div>
+      <div class="card-desc">统计功能导航、参数配置、结果输出、AI解读</div>
+      <div class="card-tag">已完成</div>
+    </a>
+    <a class="card" href="page6-chart.html" target="_blank">
+      <div class="card-num">PAGE 06</div>
+      <div class="card-icon">▤</div>
+      <div class="card-title">智能可视化图表</div>
+      <div class="card-desc">字段拖拽、图表画布、样式配置、多图类型</div>
+      <div class="card-tag">已完成</div>
+    </a>
+    <a class="card" href="page7-report.html" target="_blank">
+      <div class="card-num">PAGE 07</div>
+      <div class="card-icon">📄</div>
+      <div class="card-title">自动化报告生成</div>
+      <div class="card-desc">模板选择、实时预览报告纸、多格式导出</div>
+      <div class="card-tag">已完成</div>
+    </a>
+    <a class="card" href="page8-user-center.html" target="_blank">
+      <div class="card-num">PAGE 08</div>
+      <div class="card-icon">👤</div>
+      <div class="card-title">个人中心</div>
+      <div class="card-desc">资料设置、项目管理、套餐用量、账号安全</div>
+      <div class="card-tag">已完成</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    MetaAnalysis 元析智能 · MVP一期 8张原型 · 由 WorkBuddy AI 自动生成 · 2026-05-13<br/>
+    技术栈：纯HTML+CSS原型，商务极简B端风格，适配电脑宽屏，可直接用于开发参考
+  </div>
+</body>
+</html>

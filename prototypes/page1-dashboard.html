@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MetaAnalysis 元析智能 · 工作台首页</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page:     #f0f2f5;
+      --bg-sidebar:  #ffffff;
+      --bg-card:     #ffffff;
+      --bg-topbar:   #ffffff;
+      --border:      #e8eaed;
+      --primary:     #3a6fd8;
+      --primary-lt:  #eef2fc;
+      --text-main:   #1a1f2e;
+      --text-sub:    #6b7280;
+      --text-muted:  #9ca3af;
+      --success:     #10b981;
+      --warning:     #f59e0b;
+      --danger:      #ef4444;
+      --info:        #3b82f6;
+      --radius:      8px;
+      --shadow-sm:   0 1px 3px rgba(0,0,0,.06);
+      --shadow-md:   0 4px 12px rgba(0,0,0,.08);
+      --sidebar-w:   220px;
+      --topbar-h:    56px;
+      --font:        'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    }
+
+    body { font-family: var(--font); background: var(--bg-page); color: var(--text-main); display: flex; min-height: 100vh; }
+
+    /* ── 左侧导航 ── */
+    .sidebar {
+      width: var(--sidebar-w); min-height: 100vh; background: var(--bg-sidebar);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; z-index: 100;
+    }
+    .sidebar-logo {
+      height: var(--topbar-h); display: flex; align-items: center; gap: 10px;
+      padding: 0 20px; border-bottom: 1px solid var(--border);
+    }
+    .logo-icon {
+      width: 28px; height: 28px; background: var(--primary); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 13px; font-weight: 700; letter-spacing: -0.5px;
+    }
+    .logo-text { font-size: 15px; font-weight: 600; color: var(--text-main); }
+    .logo-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    .nav-section { padding: 12px 0; }
+    .nav-section-title {
+      font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: .06em;
+      padding: 0 20px 6px; text-transform: uppercase;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 20px;
+      font-size: 13.5px; color: var(--text-sub); cursor: pointer; border-radius: 0;
+      transition: background .15s, color .15s; position: relative;
+    }
+    .nav-item:hover  { background: var(--primary-lt); color: var(--primary); }
+    .nav-item.active { background: var(--primary-lt); color: var(--primary); font-weight: 600; }
+    .nav-item.active::before {
+      content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
+      width: 3px; background: var(--primary); border-radius: 0 3px 3px 0;
+    }
+    .nav-icon { width: 16px; text-align: center; font-size: 14px; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto; background: var(--danger); color: #fff;
+      font-size: 10px; padding: 1px 6px; border-radius: 10px;
+    }
+
+    .sidebar-footer {
+      margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--primary-lt);
+      border: 1.5px solid var(--primary); display: flex; align-items: center;
+      justify-content: center; color: var(--primary); font-size: 13px; font-weight: 600;
+    }
+    .user-info { flex: 1; }
+    .user-name  { font-size: 13px; font-weight: 500; }
+    .user-role  { font-size: 11px; color: var(--text-muted); }
+
+    /* ── 主体区域 ── */
+    .main-wrap { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── 顶部栏 ── */
+    .topbar {
+      height: var(--topbar-h); background: var(--bg-topbar); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 28px; gap: 16px;
+      position: sticky; top: 0; z-index: 90;
+    }
+    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); }
+    .breadcrumb span { color: var(--text-muted); }
+    .breadcrumb b   { color: var(--text-main); font-weight: 500; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .topbar-btn {
+      width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--text-sub); cursor: pointer;
+      transition: background .15s;
+    }
+    .topbar-btn:hover { background: var(--primary-lt); color: var(--primary); }
+    .topbar-date { font-size: 12px; color: var(--text-muted); }
+
+    /* ── 页面内容 ── */
+    .content { padding: 24px 28px; flex: 1; }
+
+    /* 欢迎横幅 */
+    .welcome-banner {
+      background: linear-gradient(108deg, #3a6fd8 0%, #4f8ef7 100%);
+      border-radius: var(--radius); padding: 22px 28px; display: flex;
+      align-items: center; justify-content: space-between; margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(58,111,216,.25);
+    }
+    .welcome-text h2 { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .welcome-text p  { font-size: 13px; color: rgba(255,255,255,.8); }
+    .welcome-date    { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 8px; }
+    .welcome-actions { display: flex; gap: 10px; }
+    .btn-white {
+      background: rgba(255,255,255,.95); color: var(--primary); border: none;
+      padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+    }
+    .btn-outline-white {
+      background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.6);
+      padding: 8px 18px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    }
+
+    /* 统计卡片 */
+    .section-title {
+      font-size: 14px; font-weight: 600; color: var(--text-main);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::before {
+      content: ''; width: 3px; height: 14px; background: var(--primary); border-radius: 2px;
+    }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border);
+      padding: 18px 20px; box-shadow: var(--shadow-sm);
+    }
+    .stat-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+    .stat-icon {
+      width: 38px; height: 38px; border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; font-size: 18px;
+    }
+    .si-blue   { background: #eef2fc; }
+    .si-green  { background: #ecfdf5; }
+    .si-yellow { background: #fffbeb; }
+    .si-purple { background: #f3e8ff; }
+    .stat-trend { font-size: 12px; color: var(--success); background: #ecfdf5; padding: 2px 8px; border-radius: 10px; }
+    .stat-num   { font-size: 26px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+    .stat-label { font-size: 12px; color: var(--text-muted); }
+    .stat-bar   { height: 3px; background: var(--border); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+    .stat-bar-fill { height: 100%; border-radius: 2px; }
+
+    /* 快捷入口 */
+    .quick-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 28px; }
+    .quick-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 12px; text-align: center; cursor: pointer; transition: all .18s;
+      box-shadow: var(--shadow-sm);
+    }
+    .quick-card:hover {
+      border-color: var(--primary); box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .quick-icon {
+      width: 40px; height: 40px; border-radius: 10px; margin: 0 auto 10px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .quick-label { font-size: 12.5px; color: var(--text-main); font-weight: 500; }
+    .quick-desc  { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    /* 底部两栏 */
+    .bottom-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+
+    /* 最近项目 */
+    .panel {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .panel-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-title { font-size: 13.5px; font-weight: 600; }
+    .panel-link  { font-size: 12px; color: var(--primary); cursor: pointer; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { font-size: 12.5px; padding: 10px 20px; text-align: left; }
+    th { background: #fafbfc; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+    td { border-bottom: 1px solid var(--border); color: var(--text-main); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--primary-lt); }
+
+    .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+    }
+    .tag-blue   { background: #eef2fc; color: var(--primary); }
+    .tag-green  { background: #ecfdf5; color: var(--success); }
+    .tag-yellow { background: #fffbeb; color: var(--warning); }
+    .tag-gray   { background: #f3f4f6; color: var(--text-muted); }
+
+    .progress { height: 5px; background: var(--border); border-radius: 3px; width: 80px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 3px; }
+
+    /* 右侧面板 */
+    .right-panels { display: flex; flex-direction: column; gap: 16px; }
+    .notice-list { padding: 4px 0; }
+    .notice-item {
+      display: flex; align-items: flex-start; gap: 10px; padding: 10px 20px;
+      border-bottom: 1px solid var(--border); font-size: 12.5px;
+    }
+    .notice-item:last-child { border-bottom: none; }
+    .notice-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .dot-blue  { background: var(--primary); }
+    .dot-green { background: var(--success); }
+    .dot-yellow{ background: var(--warning); }
+    .notice-text  { color: var(--text-main); line-height: 1.5; }
+    .notice-time  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .recommend-list { padding: 4px 0; }
+    .recommend-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .recommend-item:last-child { border-bottom: none; }
+    .recommend-item:hover { background: var(--primary-lt); }
+    .ri-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .ri-info  { flex: 1; }
+    .ri-name  { font-size: 13px; font-weight: 500; }
+    .ri-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .ri-arrow { font-size: 12px; color: var(--text-muted); }
+
+    /* 底部状态栏 */
+    .statusbar {
+      height: 32px; background: #f8f9fa; border-top: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 28px; gap: 24px;
+      font-size: 11px; color: var(--text-muted);
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ 左侧导航 ═══ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">MA</div>
+    <div>
+      <div class="logo-text">MetaAnalysis</div>
+      <div class="logo-sub">元析智能</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-item active">
+      <span class="nav-icon">⊞</span> 工作台首页
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">数据中心</div>
+    <div class="nav-item"><span class="nav-icon">↑</span> 数据接入</div>
+    <div class="nav-item"><span class="nav-icon">☰</span> 数据管理</div>
+    <div class="nav-item"><span class="nav-icon">✦</span> 智能清洗</div>
+    <div class="nav-item"><span class="nav-icon">≡</span> 口径管理</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">智能分析</div>
+    <div class="nav-item"><span class="nav-icon">💬</span> AI智能问答</div>
+    <div class="nav-item"><span class="nav-icon">⚡</span> 探索分析</div>
+    <div class="nav-item"><span class="nav-icon">⊕</span> 归因分析</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">统计建模</div>
+    <div class="nav-item"><span class="nav-icon">∑</span> 描述统计</div>
+    <div class="nav-item"><span class="nav-icon">≈</span> 推断统计</div>
+    <div class="nav-item"><span class="nav-icon">∿</span> 相关与回归</div>
+    <div class="nav-item"><span class="nav-icon">⌁</span> 时序分析</div>
+    <div class="nav-item"><span class="nav-icon">◎</span> 聚类挖掘</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">输出中心</div>
+    <div class="nav-item"><span class="nav-icon">▤</span> 可视化看板</div>
+    <div class="nav-item"><span class="nav-icon">📄</span> 报告生成</div>
+    <div class="nav-item"><span class="nav-icon">🔔</span> 监控预警 <span class="nav-badge">2</span></div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="avatar">赫</div>
+    <div class="user-info">
+      <div class="user-name">赫训显</div>
+      <div class="user-role">个人版 · 试用中</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ 主体区域 ═══ -->
+<div class="main-wrap">
+
+  <!-- 顶部栏 -->
+  <header class="topbar">
+    <div class="breadcrumb">
+      <span>首页</span> › <b>工作台</b>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-date">2026年5月13日 · 星期三</div>
+      <div class="topbar-btn" title="搜索">🔍</div>
+      <div class="topbar-btn" title="消息通知" style="position:relative;">
+        🔔
+        <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--danger);border-radius:50%;border:1.5px solid #fff;"></span>
+      </div>
+      <div class="topbar-btn" title="系统设置">⚙</div>
+      <div class="avatar" style="width:30px;height:30px;font-size:12px;">赫</div>
+    </div>
+  </header>
+
+  <!-- 内容区 -->
+  <main class="content">
+
+    <!-- 欢迎横幅 -->
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h2>你好，赫训显！欢迎回到 MetaAnalysis 元析智能</h2>
+        <p>今日共有 3 个分析任务待处理，数据清洗队列中有 1 个文件等待确认</p>
+        <div class="welcome-date">上次登录：2026-05-12 18:34 · 本月分析 12 次</div>
+      </div>
+      <div class="welcome-actions">
+        <button class="btn-white">+ 新建分析</button>
+        <button class="btn-outline-white">上传数据</button>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="section-title">数据资产概览</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon si-blue">📊</div>
+          <div class="stat-trend">+2 本周</div>
+        </div>
+        <div class="stat-num">18</div>
+        <div class="stat-label">我的数据集</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:72%;background:var(--primary);"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon si-green">⚙</div>
+          <div class="stat-trend">+5 本周</div>
+        </div>
+        <div class="stat-num">34</div>
+        <div class="stat-label">分析任务总计</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:58%;background:var(--success);"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon si-yellow">📋</div>
+          <div class="stat-trend">+3 本月</div>
+        </div>
+        <div class="stat-num">9</div>
+        <div class="stat-label">已生成报告</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:45%;background:var(--warning);"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon si-purple">💾</div>
+          <div class="stat-trend" style="color:var(--text-muted);background:#f3f4f6;">1.2GB / 5GB</div>
+        </div>
+        <div class="stat-num">24%</div>
+        <div class="stat-label">存储空间使用率</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:24%;background:#a855f7;"></div></div>
+      </div>
+    </div>
+
+    <!-- 快捷功能入口 -->
+    <div class="section-title">快捷功能入口</div>
+    <div class="quick-grid">
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#eef2fc;">📤</div>
+        <div class="quick-label">上传数据</div>
+        <div class="quick-desc">Excel / CSV / PDF</div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#ecfdf5;">✦</div>
+        <div class="quick-label">智能清洗</div>
+        <div class="quick-desc">一键清洗异常数据</div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#fff7ed;">💬</div>
+        <div class="quick-label">AI问答</div>
+        <div class="quick-desc">自然语言分析</div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#fffbeb;">∑</div>
+        <div class="quick-label">统计分析</div>
+        <div class="quick-desc">高阶统计建模</div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#f3e8ff;">▤</div>
+        <div class="quick-label">制作图表</div>
+        <div class="quick-desc">可视化看板</div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#fef2f2;">📋</div>
+        <div class="quick-label">生成报告</div>
+        <div class="quick-desc">一键导出Word/PDF</div>
+      </div>
+    </div>
+
+    <!-- 底部两栏 -->
+    <div class="bottom-grid">
+
+      <!-- 最近项目列表 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">最近分析项目</div>
+          <div class="panel-link">查看全部 →</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>项目名称</th>
+              <th>数据类型</th>
+              <th>状态</th>
+              <th>进度</th>
+              <th>最近更新</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Q1销售数据综合分析</td>
+              <td><span class="tag tag-blue">Excel</span></td>
+              <td><span class="tag tag-green">已完成</span></td>
+              <td><div class="progress"><div class="progress-fill" style="width:100%"></div></div></td>
+              <td>05-12</td>
+              <td style="color:var(--primary);cursor:pointer;">查看</td>
+            </tr>
+            <tr>
+              <td>用户行为聚类分析</td>
+              <td><span class="tag tag-blue">CSV</span></td>
+              <td><span class="tag tag-yellow">分析中</span></td>
+              <td><div class="progress"><div class="progress-fill" style="width:65%"></div></div></td>
+              <td>05-13</td>
+              <td style="color:var(--primary);cursor:pointer;">继续</td>
+            </tr>
+            <tr>
+              <td>财务报表多维统计</td>
+              <td><span class="tag tag-blue">PDF</span></td>
+              <td><span class="tag tag-yellow">清洗中</span></td>
+              <td><div class="progress"><div class="progress-fill" style="width:30%"></div></div></td>
+              <td>05-13</td>
+              <td style="color:var(--primary);cursor:pointer;">查看</td>
+            </tr>
+            <tr>
+              <td>市场调研回归分析</td>
+              <td><span class="tag tag-blue">Excel</span></td>
+              <td><span class="tag tag-green">已完成</span></td>
+              <td><div class="progress"><div class="progress-fill" style="width:100%"></div></div></td>
+              <td>05-10</td>
+              <td style="color:var(--primary);cursor:pointer;">查看</td>
+            </tr>
+            <tr>
+              <td>库存时序预测模型</td>
+              <td><span class="tag tag-blue">CSV</span></td>
+              <td><span class="tag tag-gray">草稿</span></td>
+              <td><div class="progress"><div class="progress-fill" style="width:10%"></div></div></td>
+              <td>05-08</td>
+              <td style="color:var(--primary);cursor:pointer;">继续</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 右侧面板 -->
+      <div class="right-panels">
+        <!-- 系统通知 -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">系统通知</div>
+            <div class="panel-link">全部已读</div>
+          </div>
+          <div class="notice-list">
+            <div class="notice-item">
+              <div class="notice-dot dot-blue"></div>
+              <div>
+                <div class="notice-text">「用户行为聚类分析」任务已完成 AI 推理，请查看结果</div>
+                <div class="notice-time">10分钟前</div>
+              </div>
+            </div>
+            <div class="notice-item">
+              <div class="notice-dot dot-yellow"></div>
+              <div>
+                <div class="notice-text">「财务报表」文件清洗检测到 12 处异常值，待确认</div>
+                <div class="notice-time">1小时前</div>
+              </div>
+            </div>
+            <div class="notice-item">
+              <div class="notice-dot dot-green"></div>
+              <div>
+                <div class="notice-text">报告「Q1销售分析_商务版.pdf」已生成，可下载</div>
+                <div class="notice-time">昨天 18:34</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 功能推荐 -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">功能推荐</div>
+          </div>
+          <div class="recommend-list">
+            <div class="recommend-item">
+              <div class="ri-icon" style="background:#eef2fc;">⊕</div>
+              <div class="ri-info">
+                <div class="ri-name">尝试归因分析</div>
+                <div class="ri-desc">精准定位业务波动根因</div>
+              </div>
+              <div class="ri-arrow">›</div>
+            </div>
+            <div class="recommend-item">
+              <div class="ri-icon" style="background:#ecfdf5;">∿</div>
+              <div class="ri-info">
+                <div class="ri-name">时序预测建模</div>
+                <div class="ri-desc">对趋势数据进行未来预判</div>
+              </div>
+              <div class="ri-arrow">›</div>
+            </div>
+            <div class="recommend-item">
+              <div class="ri-icon" style="background:#fffbeb;">▤</div>
+              <div class="ri-info">
+                <div class="ri-name">自定义可视化大屏</div>
+                <div class="ri-desc">拖拽组件搭建专属看板</div>
+              </div>
+              <div class="ri-arrow">›</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 底部状态栏 -->
+  <footer class="statusbar">
+    <span><span class="status-dot"></span>系统运行正常</span>
+    <span>数据集：18 个</span>
+    <span>存储：1.2GB / 5GB</span>
+    <span>版本：MetaAnalysis v0.1.0-MVP</span>
+    <span style="margin-left:auto;">© 2026 MetaAnalysis 元析智能</span>
+  </footer>
+
+</div>
+
+</body>
+</html>

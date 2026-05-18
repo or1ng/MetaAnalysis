@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MetaAnalysis 元析智能 · 数据上传与管理</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-page:#f0f2f5; --bg-sidebar:#ffffff; --bg-card:#ffffff;
+      --bg-topbar:#ffffff; --border:#e8eaed;
+      --primary:#3a6fd8; --primary-lt:#eef2fc;
+      --text-main:#1a1f2e; --text-sub:#6b7280; --text-muted:#9ca3af;
+      --success:#10b981; --warning:#f59e0b; --danger:#ef4444;
+      --radius:8px; --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+      --shadow-md:0 4px 12px rgba(0,0,0,.08);
+      --sidebar-w:220px; --topbar-h:56px;
+      --font:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    }
+    body { font-family:var(--font); background:var(--bg-page); color:var(--text-main); display:flex; min-height:100vh; }
+
+    /* ─ Sidebar ─ */
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--bg-sidebar); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; z-index:100; }
+    .sidebar-logo { height:var(--topbar-h); display:flex; align-items:center; gap:10px; padding:0 20px; border-bottom:1px solid var(--border); }
+    .logo-icon { width:28px; height:28px; background:var(--primary); border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:700; }
+    .logo-text { font-size:15px; font-weight:600; } .logo-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
+    .nav-section { padding:12px 0; }
+    .nav-section-title { font-size:11px; color:var(--text-muted); font-weight:500; letter-spacing:.06em; padding:0 20px 6px; text-transform:uppercase; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:9px 20px; font-size:13.5px; color:var(--text-sub); cursor:pointer; transition:background .15s,color .15s; position:relative; }
+    .nav-item:hover { background:var(--primary-lt); color:var(--primary); }
+    .nav-item.active { background:var(--primary-lt); color:var(--primary); font-weight:600; }
+    .nav-item.active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; background:var(--primary); border-radius:0 3px 3px 0; }
+    .nav-icon { width:16px; text-align:center; font-size:14px; flex-shrink:0; }
+    .sidebar-footer { margin-top:auto; padding:16px 20px; border-top:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+    .avatar { width:32px; height:32px; border-radius:50%; background:var(--primary-lt); border:1.5px solid var(--primary); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:13px; font-weight:600; }
+    .user-name { font-size:13px; font-weight:500; } .user-role { font-size:11px; color:var(--text-muted); }
+
+    /* ─ Main ─ */
+    .main-wrap { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; }
+    .topbar { height:var(--topbar-h); background:var(--bg-topbar); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 28px; gap:16px; position:sticky; top:0; z-index:90; }
+    .breadcrumb { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-sub); }
+    .breadcrumb span { color:var(--text-muted); } .breadcrumb b { color:var(--text-main); font-weight:500; }
+    .topbar-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+    .topbar-btn { height:32px; padding:0 14px; border-radius:6px; border:1px solid var(--border); background:#fff; font-size:12.5px; color:var(--text-sub); cursor:pointer; display:flex; align-items:center; gap:6px; }
+    .topbar-btn:hover { background:var(--primary-lt); color:var(--primary); border-color:var(--primary); }
+    .btn-primary { background:var(--primary); color:#fff; border:none; height:32px; padding:0 16px; border-radius:6px; font-size:12.5px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+
+    .content { padding:24px 28px; flex:1; }
+
+    /* ─ Upload Area ─ */
+    .upload-zone {
+      border:2px dashed #c5d4f0; border-radius:var(--radius); background:#f8faff;
+      padding:36px 28px; text-align:center; margin-bottom:24px;
+      transition:all .2s; cursor:pointer;
+    }
+    .upload-zone:hover { border-color:var(--primary); background:#eef2fc; }
+    .upload-icon { font-size:36px; margin-bottom:12px; opacity:.6; }
+    .upload-title { font-size:15px; font-weight:600; color:var(--text-main); margin-bottom:6px; }
+    .upload-sub { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+    .upload-formats { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .format-tag { background:#fff; border:1px solid var(--border); border-radius:4px; padding:4px 12px; font-size:12px; color:var(--text-sub); }
+
+    /* ─ Toolbar ─ */
+    .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .search-input {
+      flex:1; max-width:320px; height:34px; border:1px solid var(--border);
+      border-radius:6px; padding:0 12px 0 32px; font-size:13px; background:#fff;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:10px center; outline:none;
+    }
+    .search-input:focus { border-color:var(--primary); }
+    .filter-select { height:34px; border:1px solid var(--border); border-radius:6px; padding:0 10px; font-size:13px; color:var(--text-sub); background:#fff; outline:none; cursor:pointer; }
+    .toolbar-right { margin-left:auto; display:flex; gap:10px; }
+
+    /* ─ Stats Row ─ */
+    .stats-row { display:flex; gap:16px; margin-bottom:20px; }
+    .mini-stat { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 20px; flex:1; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow-sm); }
+    .ms-icon { font-size:20px; }
+    .ms-num { font-size:18px; font-weight:700; color:var(--text-main); }
+    .ms-label { font-size:12px; color:var(--text-muted); margin-top:1px; }
+
+    /* ─ Table ─ */
+    .panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); overflow:hidden; }
+    .panel-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .panel-title { font-size:13.5px; font-weight:600; }
+
+    table { width:100%; border-collapse:collapse; }
+    th,td { font-size:12.5px; padding:11px 18px; text-align:left; }
+    th { background:#fafbfc; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border); }
+    td { border-bottom:1px solid var(--border); }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--primary-lt); }
+    td.name { font-weight:500; color:var(--text-main); display:flex; align-items:center; gap:8px; }
+    .file-icon { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+
+    .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; }
+    .tag-blue   { background:#eef2fc; color:var(--primary); }
+    .tag-green  { background:#ecfdf5; color:var(--success); }
+    .tag-yellow { background:#fffbeb; color:var(--warning); }
+    .tag-gray   { background:#f3f4f6; color:var(--text-muted); }
+    .tag-red    { background:#fef2f2; color:var(--danger); }
+
+    .action-btns { display:flex; gap:10px; align-items:center; }
+    .act { font-size:12px; color:var(--primary); cursor:pointer; }
+    .act:hover { text-decoration:underline; }
+    .act-danger { color:var(--danger); }
+
+    /* ─ Progress ─ */
+    .progress { height:5px; background:var(--border); border-radius:3px; width:90px; overflow:hidden; display:inline-block; vertical-align:middle; }
+    .progress-fill { height:100%; background:var(--primary); border-radius:3px; }
+
+    /* ─ Pagination ─ */
+    .pagination { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-top:1px solid var(--border); font-size:12.5px; color:var(--text-muted); }
+    .page-btns { display:flex; gap:6px; }
+    .page-btn { width:28px; height:28px; border:1px solid var(--border); border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; }
+    .page-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .page-btn:hover:not(.active) { background:var(--primary-lt); color:var(--primary); }
+
+    /* ─ Status bar ─ */
+    .statusbar { height:32px; background:#f8f9fa; border-top:1px solid var(--border); display:flex; align-items:center; padding:0 28px; gap:24px; font-size:11px; color:var(--text-muted); }
+    .status-dot { width:6px; height:6px; border-radius:50%; background:var(--success); display:inline-block; margin-right:4px; }
+
+    /* ─ Upload modal panel (inline preview) ─ */
+    .upload-processing {
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:16px 20px; margin-bottom:20px; box-shadow:var(--shadow-sm);
+      display:flex; align-items:center; gap:16px;
+    }
+    .up-icon { font-size:24px; }
+    .up-info { flex:1; }
+    .up-name { font-size:13px; font-weight:500; margin-bottom:4px; }
+    .up-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-bottom:4px; }
+    .up-bar-fill { height:100%; background:var(--primary); border-radius:3px; width:72%; animation:progress-anim 1.5s ease-in-out infinite alternate; }
+    @keyframes progress-anim { from{width:65%} to{width:85%} }
+    .up-status { font-size:11px; color:var(--text-muted); }
+    .up-cancel { font-size:12px; color:var(--danger); cursor:pointer; }
+
+    .section-title { font-size:14px; font-weight:600; color:var(--text-main); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .section-title::before { content:''; width:3px; height:14px; background:var(--primary); border-radius:2px; }
+  </style>
+</head>
+<body>
+
+<!-- ═ Sidebar ═ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">MA</div>
+    <div><div class="logo-text">MetaAnalysis</div><div class="logo-sub">元析智能</div></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-item"><span class="nav-icon">⊞</span> 工作台首页</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">数据中心</div>
+    <div class="nav-item active"><span class="nav-icon">↑</span> 数据接入</div>
+    <div class="nav-item active" style="background:transparent;font-weight:400;"><span class="nav-icon">☰</span> 数据管理</div>
+    <div class="nav-item"><span class="nav-icon">✦</span> 智能清洗</div>
+    <div class="nav-item"><span class="nav-icon">≡</span> 口径管理</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">智能分析</div>
+    <div class="nav-item"><span class="nav-icon">💬</span> AI智能问答</div>
+    <div class="nav-item"><span class="nav-icon">⚡</span> 探索分析</div>
+    <div class="nav-item"><span class="nav-icon">⊕</span> 归因分析</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">统计建模</div>
+    <div class="nav-item"><span class="nav-icon">∑</span> 描述统计</div>
+    <div class="nav-item"><span class="nav-icon">≈</span> 推断统计</div>
+    <div class="nav-item"><span class="nav-icon">∿</span> 相关与回归</div>
+    <div class="nav-item"><span class="nav-icon">⌁</span> 时序分析</div>
+    <div class="nav-item"><span class="nav-icon">◎</span> 聚类挖掘</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">输出中心</div>
+    <div class="nav-item"><span class="nav-icon">▤</span> 可视化看板</div>
+    <div class="nav-item"><span class="nav-icon">📄</span> 报告生成</div>
+    <div class="nav-item"><span class="nav-icon">🔔</span> 监控预警</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">赫</div>
+    <div><div class="user-name">赫训显</div><div class="user-role">个人版 · 试用中</div></div>
+  </div>
+</aside>
+
+<!-- ═ Main ═ -->
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="breadcrumb">
+      <span>首页</span> › <span>数据中心</span> › <b>数据接入与管理</b>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn">⊞ 数据库连接</button>
+      <button class="topbar-btn">⬇ 批量导入</button>
+      <button class="btn-primary">＋ 上传文件</button>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- 文件上传区 -->
+    <div class="section-title">数据接入</div>
+    <div class="upload-zone">
+      <div class="upload-icon">📂</div>
+      <div class="upload-title">拖拽文件到此处，或点击选择文件上传</div>
+      <div class="upload-sub">支持单文件最大 200MB，批量上传最多 20 个文件</div>
+      <div class="upload-formats">
+        <span class="format-tag">📊 Excel (.xlsx/.xls)</span>
+        <span class="format-tag">📋 CSV (.csv)</span>
+        <span class="format-tag">📄 PDF (.pdf)</span>
+        <span class="format-tag">📝 TXT (.txt)</span>
+        <span class="format-tag">📑 Word (.docx)</span>
+        <span class="format-tag">🖼 图片表格识别</span>
+      </div>
+    </div>
+
+    <!-- 上传中状态 -->
+    <div class="upload-processing">
+      <div class="up-icon">📊</div>
+      <div class="up-info">
+        <div class="up-name">Q2销售数据汇总.xlsx &nbsp;<span class="tag tag-yellow">解析中</span></div>
+        <div class="up-bar"><div class="up-bar-fill"></div></div>
+        <div class="up-status">正在解析数据结构，已识别 3 个工作表，共 2,847 行数据... 72%</div>
+      </div>
+      <div class="up-cancel">取消</div>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="stats-row">
+      <div class="mini-stat">
+        <div class="ms-icon">📁</div>
+        <div><div class="ms-num">18</div><div class="ms-label">全部数据集</div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-icon" style="color:var(--success)">✅</div>
+        <div><div class="ms-num" style="color:var(--success)">14</div><div class="ms-label">已就绪</div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-icon" style="color:var(--warning)">⚠</div>
+        <div><div class="ms-num" style="color:var(--warning)">3</div><div class="ms-label">待清洗</div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-icon" style="color:var(--danger)">⊗</div>
+        <div><div class="ms-num" style="color:var(--danger)">1</div><div class="ms-label">解析异常</div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-icon">💾</div>
+        <div><div class="ms-num">1.2GB</div><div class="ms-label">已用存储</div></div>
+      </div>
+    </div>
+
+    <!-- 数据集列表 -->
+    <div class="section-title">数据集管理</div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">全部数据集（18）</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input class="search-input" placeholder="搜索数据集名称..." />
+          <select class="filter-select"><option>全部格式</option><option>Excel</option><option>CSV</option><option>PDF</option></select>
+          <select class="filter-select"><option>全部状态</option><option>已就绪</option><option>待清洗</option><option>异常</option></select>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28px;"><input type="checkbox" /></th>
+            <th>文件名称</th>
+            <th>格式</th>
+            <th>数据行数</th>
+            <th>文件大小</th>
+            <th>上传时间</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox" /></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="file-icon" style="background:#ecfdf5;">📊</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">Q1销售数据汇总.xlsx</div>
+                  <div style="font-size:11px;color:var(--text-muted);">3个工作表 · 2,847行</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="tag tag-blue">Excel</span></td>
+            <td>2,847</td>
+            <td>4.2 MB</td>
+            <td>2026-05-12</td>
+            <td><span class="tag tag-green">✓ 已就绪</span></td>
+            <td><div class="action-btns"><span class="act">预览</span><span class="act">分析</span><span class="act">备份</span><span class="act act-danger">删除</span></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" /></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="file-icon" style="background:#eef2fc;">📋</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">用户行为埋点数据_5月.csv</div>
+                  <div style="font-size:11px;color:var(--text-muted);">1个工作表 · 58,342行</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="tag tag-blue">CSV</span></td>
+            <td>58,342</td>
+            <td>28.6 MB</td>
+            <td>2026-05-13</td>
+            <td><span class="tag tag-yellow">⚠ 待清洗</span></td>
+            <td><div class="action-btns"><span class="act">预览</span><span class="act">去清洗</span><span class="act">备份</span><span class="act act-danger">删除</span></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" /></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="file-icon" style="background:#fef2f2;">📄</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">2025年度财务报告.pdf</div>
+                  <div style="font-size:11px;color:var(--text-muted);">已提取表格 · 156行</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="tag tag-blue">PDF</span></td>
+            <td>156</td>
+            <td>2.1 MB</td>
+            <td>2026-05-13</td>
+            <td><span class="tag tag-yellow">⚠ 待清洗</span></td>
+            <td><div class="action-btns"><span class="act">预览</span><span class="act">去清洗</span><span class="act">备份</span><span class="act act-danger">删除</span></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" /></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="file-icon" style="background:#ecfdf5;">📊</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">市场调研问卷汇总.xlsx</div>
+                  <div style="font-size:11px;color:var(--text-muted);">1个工作表 · 1,230行</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="tag tag-blue">Excel</span></td>
+            <td>1,230</td>
+            <td>1.8 MB</td>
+            <td>2026-05-10</td>
+            <td><span class="tag tag-green">✓ 已就绪</span></td>
+            <td><div class="action-btns"><span class="act">预览</span><span class="act">分析</span><span class="act">备份</span><span class="act act-danger">删除</span></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" /></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="file-icon" style="background:#fef2f2;">📋</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">供应链库存记录_异常版.csv</div>
+                  <div style="font-size:11px;color:var(--text-muted);">字符编码异常 · 解析失败</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="tag tag-blue">CSV</span></td>
+            <td>—</td>
+            <td>3.5 MB</td>
+            <td>2026-05-09</td>
+            <td><span class="tag tag-red">✗ 解析异常</span></td>
+            <td><div class="action-btns"><span class="act">查看日志</span><span class="act">重新上传</span><span class="act act-danger">删除</span></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" /></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="file-icon" style="background:#ecfdf5;">📊</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">电商运营指标月报.xlsx</div>
+                  <div style="font-size:11px;color:var(--text-muted);">5个工作表 · 4,512行</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="tag tag-blue">Excel</span></td>
+            <td>4,512</td>
+            <td>6.7 MB</td>
+            <td>2026-05-08</td>
+            <td><span class="tag tag-green">✓ 已就绪</span></td>
+            <td><div class="action-btns"><span class="act">预览</span><span class="act">分析</span><span class="act">备份</span><span class="act act-danger">删除</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <span>共 18 条记录，每页显示 10 条</span>
+        <div class="page-btns">
+          <div class="page-btn">‹</div>
+          <div class="page-btn active">1</div>
+          <div class="page-btn">2</div>
+          <div class="page-btn">›</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="statusbar">
+    <span><span class="status-dot"></span>系统运行正常</span>
+    <span>数据集：18 个 · 14 就绪 · 3 待清洗 · 1 异常</span>
+    <span>存储：1.2GB / 5GB</span>
+    <span style="margin-left:auto;">MetaAnalysis v0.1.0-MVP</span>
+  </footer>
+</div>
+
+</body>
+</html>
