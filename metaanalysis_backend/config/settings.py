@@ -6,6 +6,7 @@ import os
 class Settings(BaseSettings):
     """应用全局配置"""
     APP_NAME: str = "MetaAnalysis元析智能"
+    APP_VERSION: str = "2.0.0"
     DEBUG: bool = True
 
     # 数据库 - 默认使用SQLite便于开发，生产环境切换MySQL
