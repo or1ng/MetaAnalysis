@@ -40,6 +40,7 @@
             <el-radio-group v-model="chartType" size="small">
               <el-radio-button value="bar">柱状图</el-radio-button>
               <el-radio-button value="line">折线图</el-radio-button>
+              <el-radio-button value="area">面积图</el-radio-button>
               <el-radio-button value="pie">饼图</el-radio-button>
               <el-radio-button value="scatter">散点图</el-radio-button>
               <el-radio-button value="boxplot">箱线图</el-radio-button>
@@ -49,6 +50,7 @@
           <div>
             <el-button type="primary" size="small" @click="handleGenerate" :loading="loading">生成图表</el-button>
             <el-button size="small" @click="handleBatch" :loading="batchLoading">自动出图</el-button>
+            <el-button size="small" @click="handleExportPNG" :disabled="!chartGenerated">导出PNG</el-button>
           </div>
         </div>
         <div class="chart-canvas" ref="chartCanvas">
@@ -56,6 +58,19 @@
           <div v-if="!chartGenerated" class="chart-placeholder">
             <el-icon :size="64" color="#c0c4cc"><PieChart /></el-icon>
             <p>选择数据集和字段后生成图表</p>
+          </div>
+        </div>
+
+        <!-- 批量图表网格 -->
+        <div v-if="batchResults.length > 0" class="batch-grid">
+          <div
+            v-for="(item, idx) in batchResults" :key="idx"
+            class="batch-chart-card"
+            :class="{ active: activeBatchIdx === idx }"
+            @click="showBatchChart(idx)"
+          >
+            <div class="batch-chart-title">{{ item.title || item.chart_type }}</div>
+            <div :ref="el => { if (el) batchRefs[idx] = el }" class="batch-chart-inner"></div>
           </div>
         </div>
       </div>
@@ -120,6 +135,8 @@ const chartCanvas = ref(null)
 let chartInstance = null
 const batchResults = ref([])
 const activeBatchIdx = ref(-1)
+const batchRefs = {}
+let batchInstances = []
 
 onMounted(async () => {
   try {
@@ -139,6 +156,9 @@ onBeforeUnmount(() => {
     chartInstance.dispose()
     chartInstance = null
   }
+  batchInstances.forEach(inst => inst?.dispose())
+  batchInstances = []
+  window.removeEventListener('resize', handleResize)
 })
 
 async function onDatasetChange() {
@@ -149,6 +169,7 @@ async function onDatasetChange() {
   xField.value = null
   yFields.value = []
   chartGenerated.value = false
+  destroyBatchGrid()
   batchResults.value = []
   try {
     const res = await getChartFields(currentDataset.value)
@@ -194,6 +215,7 @@ async function handleGenerate() {
       return
     }
     await renderChart(option)
+    destroyBatchGrid()
     batchResults.value = []
     activeBatchIdx.value = -1
   } catch (e) {
@@ -221,7 +243,9 @@ async function handleBatch() {
     }
     batchResults.value = items
     activeBatchIdx.value = 0
-    await showBatchChart(0)
+    await renderChart(items[0].echarts_option)
+    await nextTick()
+    renderBatchGrid()
     ElMessage.success(`已生成 ${items.length} 个图表`)
   } catch (e) {
     ElMessage.error(`批量生成失败: ${e.message}`)
@@ -237,6 +261,23 @@ async function showBatchChart(idx) {
   await renderChart(item.echarts_option)
 }
 
+function renderBatchGrid() {
+  destroyBatchGrid()
+  const items = batchResults.value
+  items.forEach((item, idx) => {
+    const el = batchRefs[idx]
+    if (!el) return
+    const inst = echarts.init(el)
+    inst.setOption(item.echarts_option)
+    batchInstances.push(inst)
+  })
+}
+
+function destroyBatchGrid() {
+  batchInstances.forEach(inst => inst?.dispose())
+  batchInstances = []
+}
+
 async function renderChart(option) {
   chartGenerated.value = true
   await nextTick()
@@ -249,6 +290,16 @@ async function renderChart(option) {
 
 function handleResize() {
   if (chartInstance) chartInstance.resize()
+}
+
+function handleExportPNG() {
+  if (!chartInstance) return
+  const url = chartInstance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#fff' })
+  const link = document.createElement('a')
+  link.download = `chart_${Date.now()}.png`
+  link.href = url
+  link.click()
+  ElMessage.success('图表已导出')
 }
 </script>
 
@@ -282,4 +333,31 @@ function handleResize() {
 }
 .batch-item:hover { background: #eff6ff; color: var(--primary); }
 .batch-item.active { background: var(--primary); color: #fff; }
+
+/* 批量图表网格 */
+.batch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-top: 12px;
+  max-height: calc(100vh - 480px);
+  overflow-y: auto;
+}
+.batch-chart-card {
+  background: #fafafa;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.batch-chart-card:hover { border-color: var(--primary); }
+.batch-chart-card.active { border-color: var(--primary); border-width: 2px; }
+.batch-chart-title {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.batch-chart-inner { width: 100%; height: 200px; }
 </style>

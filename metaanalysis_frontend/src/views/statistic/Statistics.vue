@@ -45,6 +45,21 @@
           <div class="nav-item" :class="{ active: activeFunc === 'clustering' }" @click="activeFunc = 'clustering'">
             <el-icon><Aim /></el-icon>聚类分析
           </div>
+          <div class="nav-item" :class="{ active: activeFunc === 'dbscan' }" @click="activeFunc = 'dbscan'">
+            <el-icon><Histogram /></el-icon>DBSCAN聚类
+          </div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">高级建模</div>
+          <div class="nav-item" :class="{ active: activeFunc === 'logistic' }" @click="activeFunc = 'logistic'">
+            <el-icon><Odometer /></el-icon>逻辑回归
+          </div>
+          <div class="nav-item" :class="{ active: activeFunc === 'pca' }" @click="activeFunc = 'pca'">
+            <el-icon><Grid /></el-icon>PCA降维
+          </div>
+          <div class="nav-item" :class="{ active: activeFunc === 'arima' }" @click="activeFunc = 'arima'">
+            <el-icon><TrendCharts /></el-icon>ARIMA预测
+          </div>
         </div>
       </div>
 
@@ -164,6 +179,25 @@
                 </el-form-item>
               </template>
 
+              <!-- 正态性检验 -->
+              <template v-if="params.hypothesis.method === 'normality'">
+                <el-form-item label="检验字段">
+                  <div class="field-selector" style="width:100%">
+                    <div class="field-tags">
+                      <div v-for="f in numericFields" :key="f" class="field-tag"
+                        :class="{ selected: selectedFields.includes(f) }" @click="toggleField(f)">{{ f }}</div>
+                    </div>
+                    <div class="field-actions">
+                      <el-button size="small" @click="selectedFields = [...numericFields]">全选</el-button>
+                      <el-button size="small" @click="selectedFields = []">清空</el-button>
+                    </div>
+                    <div style="font-size:11px;color:#9ca3af;margin-top:4px">
+                      {{ selectedFields.length ? `已选 ${selectedFields.length} 个字段` : '未选择则默认检验全部数值字段' }}
+                    </div>
+                  </div>
+                </el-form-item>
+              </template>
+
               <el-form-item label="显著性水平α">
                 <el-select v-model="params.hypothesis.alpha" style="width:200px">
                   <el-option label="0.01（极严格）" :value="0.01" />
@@ -232,8 +266,9 @@
             <el-form label-width="100px" size="default">
               <el-form-item label="时间列">
                 <el-select v-model="params.timeseries.date_col" placeholder="选择时间列" style="width:240px">
-                  <el-option v-for="f in allFields" :key="f" :label="f" :value="f" />
+                  <el-option v-for="f in dateFields" :key="f" :label="f" :value="f" />
                 </el-select>
+                <div v-if="dateFields.length === 0" style="font-size:11px;color:#f59e0b;margin-top:4px">⚠ 当前数据集未检测到日期/时间字段</div>
               </el-form-item>
               <el-form-item label="值列">
                 <el-select v-model="params.timeseries.value_col" placeholder="选择数值列" style="width:240px">
@@ -273,6 +308,160 @@
               <el-form-item label="标准化">
                 <el-switch v-model="params.clustering.standardize" />
               </el-form-item>
+            </el-form>
+          </div>
+        </template>
+
+        <!-- ── DBSCAN聚类 ── -->
+        <template v-if="activeFunc === 'dbscan'">
+          <div class="param-card page-card">
+            <div class="pc-title">选择聚类字段</div>
+            <div class="pc-desc">DBSCAN基于密度自动发现任意形状簇，无需预设K，能自动识别噪声点。</div>
+            <div class="field-selector">
+              <div class="fs-label">数值型字段（≥2个）</div>
+              <div class="field-tags">
+                <div v-for="f in numericFields" :key="f" class="field-tag"
+                  :class="{ selected: selectedFields.includes(f) }" @click="toggleField(f)">{{ f }}</div>
+              </div>
+              <div class="field-actions">
+                <el-button size="small" @click="selectedFields = [...numericFields]">全选</el-button>
+                <el-button size="small" @click="selectedFields = []">清空</el-button>
+              </div>
+            </div>
+          </div>
+          <div class="param-card page-card">
+            <div class="pc-title">DBSCAN参数</div>
+            <div class="pc-desc">eps：邻域半径（越小=簇越紧密）；min_samples：成为核心点的最少样本数。</div>
+            <el-form label-width="120px" size="default">
+              <el-form-item label="eps（邻域半径）">
+                <el-input-number v-model="params.dbscan.eps" :min="0.01" :max="10" :step="0.1" :precision="2" />
+              </el-form-item>
+              <el-form-item label="min_samples">
+                <el-input-number v-model="params.dbscan.min_samples" :min="2" :max="50" />
+              </el-form-item>
+              <el-form-item label="标准化">
+                <el-switch v-model="params.dbscan.standardize" />
+              </el-form-item>
+            </el-form>
+          </div>
+        </template>
+
+        <!-- ── 逻辑回归 ── -->
+        <template v-if="activeFunc === 'logistic'">
+          <div class="param-card page-card">
+            <div class="pc-title">变量设置</div>
+            <div class="pc-desc">逻辑回归用于二分类预测，因变量需为0/1或两种类别值，自变量自动标准化。</div>
+            <el-form label-width="120px" size="default">
+              <el-form-item label="因变量 Y（二分类）">
+                <el-select v-model="params.logistic.y_col" placeholder="选择分类字段（文本或数值）" style="width:240px">
+                  <el-option v-for="f in binaryCandidateFields" :key="f" :label="f" :value="f" />
+                </el-select>
+                <div style="font-size:11px;color:#9ca3af;margin-top:4px">仅显示文本型和数值型字段（排除日期列）</div>
+              </el-form-item>
+              <el-form-item label="自变量 X">
+                <el-select v-model="params.logistic.x_cols" multiple placeholder="选择自变量（可多选）" style="width:240px">
+                  <el-option v-for="f in numericFields" :key="f" :label="f" :value="f" />
+                </el-select>
+              </el-form-item>
+            </el-form>
+          </div>
+          <div class="param-card page-card">
+            <div class="pc-title">训练设置</div>
+            <el-form label-width="120px" size="default">
+              <el-form-item label="测试集比例">
+                <el-select v-model="params.logistic.test_size" style="width:200px">
+                  <el-option label="20%（推荐）" :value="0.2" />
+                  <el-option label="25%" :value="0.25" />
+                  <el-option label="30%" :value="0.3" />
+                </el-select>
+              </el-form-item>
+            </el-form>
+          </div>
+        </template>
+
+        <!-- ── PCA主成分分析 ── -->
+        <template v-if="activeFunc === 'pca'">
+          <div class="param-card page-card">
+            <div class="pc-title">选择分析字段</div>
+            <div class="pc-desc">PCA将多个相关变量降维为少数主成分，保留尽可能多的方差信息，消除多重共线性。</div>
+            <div class="field-selector">
+              <div class="fs-label">数值型字段（≥2个）</div>
+              <div class="field-tags">
+                <div v-for="f in numericFields" :key="f" class="field-tag"
+                  :class="{ selected: selectedFields.includes(f) }" @click="toggleField(f)">{{ f }}</div>
+              </div>
+              <div class="field-actions">
+                <el-button size="small" @click="selectedFields = [...numericFields]">全选</el-button>
+                <el-button size="small" @click="selectedFields = []">清空</el-button>
+              </div>
+            </div>
+          </div>
+          <div class="param-card page-card">
+            <div class="pc-title">PCA参数</div>
+            <el-form label-width="130px" size="default">
+              <el-form-item label="主成分数">
+                <el-radio-group v-model="pcaAutoMode">
+                  <el-radio value="auto">自动（按方差阈值）</el-radio>
+                  <el-radio value="manual">手动指定</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="方差阈值" v-if="pcaAutoMode === 'auto'">
+                <el-select v-model="params.pca.variance_threshold" style="width:200px">
+                  <el-option label="80%（宽松）" :value="0.80" />
+                  <el-option label="85%（推荐）" :value="0.85" />
+                  <el-option label="90%（严格）" :value="0.90" />
+                  <el-option label="95%（最严格）" :value="0.95" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="主成分数" v-if="pcaAutoMode === 'manual'">
+                <el-input-number v-model="params.pca.n_components" :min="1" :max="numericFields.length" />
+              </el-form-item>
+            </el-form>
+          </div>
+        </template>
+
+        <!-- ── ARIMA时序预测 ── -->
+        <template v-if="activeFunc === 'arima'">
+          <div class="param-card page-card">
+            <div class="pc-title">时序设置</div>
+            <div class="pc-desc">ARIMA是经典时序预测模型，支持自动定阶（AIC准则）或手动指定p/d/q参数。</div>
+            <el-form label-width="120px" size="default">
+              <el-form-item label="时间列">
+                <el-select v-model="params.arima.date_col" placeholder="选择时间列" style="width:240px">
+                  <el-option v-for="f in dateFields" :key="f" :label="f" :value="f" />
+                </el-select>
+                <div v-if="dateFields.length === 0" style="font-size:11px;color:#f59e0b;margin-top:4px">⚠ 当前数据集未检测到日期/时间字段</div>
+              </el-form-item>
+              <el-form-item label="值列">
+                <el-select v-model="params.arima.value_col" placeholder="选择数值列" style="width:240px">
+                  <el-option v-for="f in numericFields" :key="f" :label="f" :value="f" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="预测期数">
+                <el-input-number v-model="params.arima.periods" :min="1" :max="60" />
+              </el-form-item>
+            </el-form>
+          </div>
+          <div class="param-card page-card">
+            <div class="pc-title">模型参数</div>
+            <el-form label-width="120px" size="default">
+              <el-form-item label="定阶方式">
+                <el-radio-group v-model="params.arima.auto_order">
+                  <el-radio :value="true">自动定阶（AIC，推荐）</el-radio>
+                  <el-radio :value="false">手动指定</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <template v-if="!params.arima.auto_order">
+                <el-form-item label="p（AR阶）">
+                  <el-input-number v-model="params.arima.p" :min="0" :max="5" />
+                </el-form-item>
+                <el-form-item label="d（差分阶）">
+                  <el-input-number v-model="params.arima.d" :min="0" :max="2" />
+                </el-form-item>
+                <el-form-item label="q（MA阶）">
+                  <el-input-number v-model="params.arima.q" :min="0" :max="5" />
+                </el-form-item>
+              </template>
             </el-form>
           </div>
         </template>
@@ -457,6 +646,27 @@
                   </el-table-column>
                 </el-table>
               </div>
+              <div class="result-section" v-if="result.vif?.length">
+                <div class="rs-title">多重共线性检测 (VIF)</div>
+                <div class="pc-desc" style="margin-bottom:8px">VIF>10提示严重共线性，VIF>5需关注。共线性过高会导致系数不稳定、标准误膨胀。</div>
+                <el-table :data="result.vif" stripe size="small" border>
+                  <el-table-column prop="variable" label="自变量" width="120" />
+                  <el-table-column prop="vif" label="VIF" width="80">
+                    <template #default="{ row }">
+                      <span :style="{ color: row.vif > 10 ? '#ef4444' : row.vif > 5 ? '#f59e0b' : '', fontWeight: 600 }">
+                        {{ row.vif ?? '-' }}
+                      </span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="判断" width="120">
+                    <template #default="{ row }">
+                      <el-tag v-if="row.vif > 10" type="danger" size="small">严重共线性</el-tag>
+                      <el-tag v-else-if="row.vif > 5" type="warning" size="small">中度共线性</el-tag>
+                      <el-tag v-else type="success" size="small">良好</el-tag>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
             </template>
 
             <!-- 时序分析结果 -->
@@ -499,6 +709,30 @@
                   </div>
                 </div>
               </div>
+              <div class="result-section" v-if="result.elbow_data?.length">
+                <div class="rs-title">肘部法则（Elbow Method）</div>
+                <div class="pc-desc" style="margin-bottom:8px">SSE随K变化的趋势，SSE下降速率明显放缓的拐点即为建议的K值。</div>
+                <el-table :data="result.elbow_data" stripe size="small" border>
+                  <el-table-column prop="k" label="K" width="60" />
+                  <el-table-column prop="sse" label="SSE" width="120" />
+                  <el-table-column label="SSE下降量" width="120">
+                    <template #default="{ row, $index }">
+                      <span v-if="$index === 0">-</span>
+                      <span v-else>{{ (result.elbow_data[$index - 1].sse - row.sse).toFixed(2) }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="SSE分布" min-width="120">
+                    <template #default="{ row }">
+                      <div class="elbow-bar-wrap">
+                        <div class="elbow-bar"
+                          :style="{ width: getElbowBarWidth(row.sse, result.elbow_data) + '%', background: row.k === result.k ? '#3a6fd8' : '#c7d2fe' }">
+                        </div>
+                        <span class="elbow-bar-label" v-if="row.k === result.k">当前</span>
+                      </div>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
               <div class="result-section" v-if="result.cluster_stats?.length">
                 <div class="rs-title">各簇统计</div>
                 <el-table :data="result.cluster_stats" stripe size="small" border>
@@ -507,6 +741,246 @@
                   <el-table-column prop="percentage" label="占比%" width="70" />
                   <el-table-column v-for="f in result.features" :key="f" :label="f + '_均值'" :prop="f + '_mean'" width="90" />
                   <el-table-column v-for="f in result.features" :key="f+'s'" :label="f + '_标准差'" :prop="f + '_std'" width="90" />
+                </el-table>
+              </div>
+            </template>
+
+            <!-- DBSCAN结果 -->
+            <template v-if="activeFunc === 'dbscan' && result">
+              <div class="result-section">
+                <div class="rs-title">DBSCAN概况</div>
+                <div class="metrics-grid">
+                  <div class="metric-box">
+                    <div class="mb-label">有效簇数</div>
+                    <div class="mb-val">{{ result.n_clusters }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">噪声点数</div>
+                    <div class="mb-val" :style="{ color: result.n_noise > 0 ? '#f59e0b' : '' }">{{ result.n_noise }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">样本总量</div>
+                    <div class="mb-val">{{ result.n }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">轮廓系数</div>
+                    <div class="mb-val">{{ result.silhouette_score ?? '-' }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="result-section" v-if="result.cluster_stats?.length">
+                <div class="rs-title">各簇/噪声点统计</div>
+                <el-table :data="result.cluster_stats" stripe size="small" border>
+                  <el-table-column prop="label" label="分组" width="80" />
+                  <el-table-column prop="n" label="样本数" width="70" />
+                  <el-table-column prop="percentage" label="占比%" width="70" />
+                  <el-table-column v-for="f in result.features" :key="f" :label="f + '_均值'" :prop="f + '_mean'" width="90">
+                    <template #default="{ row }">{{ row.is_noise ? '-' : row[f + '_mean'] }}</template>
+                  </el-table-column>
+                  <el-table-column label="类型" width="80">
+                    <template #default="{ row }">
+                      <el-tag :type="row.is_noise ? 'warning' : 'primary'" size="small">{{ row.is_noise ? '噪声' : '簇' }}</el-tag>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+              <div class="result-section" v-if="result.kdist_sample?.length">
+                <div class="rs-title">k-距离图（eps选取参考）</div>
+                <div class="pc-desc" style="margin-bottom:8px">k-NN距离排序图中，「肘部」处对应的距离即为建议的eps值。</div>
+                <el-table :data="result.kdist_sample.slice(0,20)" stripe size="small" border>
+                  <el-table-column prop="idx" label="样本序号" width="90" />
+                  <el-table-column prop="dist" label="k-NN距离" width="120" />
+                </el-table>
+              </div>
+            </template>
+
+            <!-- 逻辑回归结果 -->
+            <template v-if="activeFunc === 'logistic' && result">
+              <div class="result-section">
+                <div class="rs-title">模型评估</div>
+                <div class="metrics-grid">
+                  <div class="metric-box">
+                    <div class="mb-label">准确率</div>
+                    <div class="mb-val" :style="{ color: result.accuracy >= 0.8 ? '#10b981' : '#f59e0b' }">{{ result.accuracy }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">AUC-ROC</div>
+                    <div class="mb-val" :style="{ color: result.auc_roc >= 0.8 ? '#10b981' : result.auc_roc >= 0.7 ? '#f59e0b' : '#ef4444' }">{{ result.auc_roc }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">训练集</div>
+                    <div class="mb-val">{{ result.n_train }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">测试集</div>
+                    <div class="mb-val">{{ result.n_test }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="result-section" v-if="result.classification_report?.length">
+                <div class="rs-title">分类报告</div>
+                <el-table :data="result.classification_report" stripe size="small" border>
+                  <el-table-column prop="class" label="类别" width="100" />
+                  <el-table-column prop="precision" label="精确率" width="80" />
+                  <el-table-column prop="recall" label="召回率" width="80" />
+                  <el-table-column prop="f1" label="F1分数" width="80">
+                    <template #default="{ row }">
+                      <span :style="{ color: row.f1 >= 0.8 ? '#10b981' : row.f1 >= 0.6 ? '#f59e0b' : '#ef4444', fontWeight: 600 }">{{ row.f1 }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="support" label="样本数" width="70" />
+                </el-table>
+              </div>
+              <div class="result-section" v-if="result.confusion_matrix">
+                <div class="rs-title">混淆矩阵</div>
+                <div class="cm-grid">
+                  <div class="cm-cell cm-header"></div>
+                  <div class="cm-cell cm-header" v-for="cls in result.class_names" :key="cls">预测: {{ cls }}</div>
+                  <template v-for="(row, i) in result.confusion_matrix.matrix" :key="i">
+                    <div class="cm-cell cm-header">实际: {{ result.class_names[i] }}</div>
+                    <div v-for="(val, j) in row" :key="j" class="cm-cell"
+                      :class="{ 'cm-tp': i === j, 'cm-fp': i !== j }">{{ val }}</div>
+                  </template>
+                </div>
+              </div>
+              <div class="result-section" v-if="result.coefficients?.length">
+                <div class="rs-title">系数表（对数几率）</div>
+                <el-table :data="result.coefficients" stripe size="small" border>
+                  <el-table-column prop="variable" label="变量" />
+                  <el-table-column prop="coefficient" label="系数（Log-Odds）" width="140" />
+                  <el-table-column prop="odds_ratio" label="Odds Ratio" width="120">
+                    <template #default="{ row }">
+                      <span :style="{ color: row.odds_ratio > 1 ? '#10b981' : '#ef4444', fontWeight: 600 }">{{ row.odds_ratio }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="影响方向" width="90">
+                    <template #default="{ row }">
+                      <el-tag :type="row.odds_ratio > 1 ? 'success' : 'danger'" size="small">{{ row.odds_ratio > 1 ? '正向↑' : '负向↓' }}</el-tag>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </template>
+
+            <!-- PCA结果 -->
+            <template v-if="activeFunc === 'pca' && result">
+              <div class="result-section">
+                <div class="rs-title">降维概况</div>
+                <div class="metrics-grid">
+                  <div class="metric-box">
+                    <div class="mb-label">原始变量数</div>
+                    <div class="mb-val">{{ result.n_original }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">保留主成分数</div>
+                    <div class="mb-val">{{ result.n_components }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">方差解释率</div>
+                    <div class="mb-val" :style="{ color: '#10b981' }">{{ result.total_variance_explained }}%</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">降维比例</div>
+                    <div class="mb-val">{{ ((1 - result.n_components / result.n_original) * 100).toFixed(0) }}%</div>
+                  </div>
+                </div>
+              </div>
+              <div class="result-section" v-if="result.variance_table?.length">
+                <div class="rs-title">方差解释表</div>
+                <el-table :data="result.variance_table" stripe size="small" border>
+                  <el-table-column prop="pc" label="主成分" width="80" />
+                  <el-table-column prop="eigenvalue" label="特征值" width="90" />
+                  <el-table-column prop="variance_ratio" label="贡献率%" width="90">
+                    <template #default="{ row }">
+                      <span style="font-weight:600;color:#3a6fd8">{{ row.variance_ratio }}%</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="cumulative_ratio" label="累积贡献率%" width="110">
+                    <template #default="{ row }">
+                      <span :style="{ color: row.cumulative_ratio >= 85 ? '#10b981' : '#6b7280', fontWeight: 600 }">{{ row.cumulative_ratio }}%</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="贡献率分布" min-width="120">
+                    <template #default="{ row }">
+                      <div class="elbow-bar-wrap">
+                        <div class="elbow-bar" :style="{ width: row.variance_ratio + '%', background: '#3a6fd8', maxWidth: '100%' }"></div>
+                      </div>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+              <div class="result-section" v-if="result.loadings?.length">
+                <div class="rs-title">载荷矩阵（各变量对主成分的贡献）</div>
+                <div class="pc-desc" style="margin-bottom:8px">绝对值越大，表示该变量对主成分贡献越大。</div>
+                <el-table :data="result.loadings" stripe size="small" border>
+                  <el-table-column prop="pc" label="主成分" width="80" fixed />
+                  <el-table-column v-for="col in result.columns" :key="col" :label="col" :prop="col" width="90">
+                    <template #default="{ row }">
+                      <span :style="{ color: Math.abs(row[col] || 0) >= 0.5 ? '#3a6fd8' : '', fontWeight: Math.abs(row[col] || 0) >= 0.5 ? 600 : 400 }">
+                        {{ row[col] }}
+                      </span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </template>
+
+            <!-- ARIMA结果 -->
+            <template v-if="activeFunc === 'arima' && result">
+              <div class="result-section">
+                <div class="rs-title">模型信息</div>
+                <div class="metrics-grid">
+                  <div class="metric-box">
+                    <div class="mb-label">最优阶次</div>
+                    <div class="mb-val">ARIMA({{ result.best_order?.p }},{{ result.best_order?.d }},{{ result.best_order?.q }})</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">AIC</div>
+                    <div class="mb-val">{{ result.aic }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">MAE</div>
+                    <div class="mb-val">{{ result.mae }}</div>
+                  </div>
+                  <div class="metric-box">
+                    <div class="mb-label">RMSE</div>
+                    <div class="mb-val">{{ result.rmse }}</div>
+                  </div>
+                </div>
+                <div class="stat-badge-row">
+                  <el-tag :type="result.is_stationary ? 'success' : 'warning'" size="small">
+                    ADF检验: {{ result.is_stationary ? '序列平稳' : '序列非平稳（已差分）' }}（p={{ result.adf_pvalue }}）
+                  </el-tag>
+                </div>
+              </div>
+              <div class="result-section" v-if="result.order_search?.length">
+                <div class="rs-title">自动定阶结果（Top 10 AIC）</div>
+                <el-table :data="result.order_search" stripe size="small" border>
+                  <el-table-column label="阶次 (p,d,q)" width="120">
+                    <template #default="{ row }">
+                      <span :style="{ fontWeight: row.p === result.best_order?.p && row.d === result.best_order?.d && row.q === result.best_order?.q ? 700 : 400, color: row.p === result.best_order?.p && row.d === result.best_order?.d && row.q === result.best_order?.q ? '#3a6fd8' : '' }">
+                        ({{ row.p }},{{ row.d }},{{ row.q }})
+                      </span>
+                      <el-tag v-if="row.p === result.best_order?.p && row.d === result.best_order?.d && row.q === result.best_order?.q" type="success" size="small" style="margin-left:4px">最优</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="aic" label="AIC" width="100" />
+                </el-table>
+              </div>
+              <div class="result-section" v-if="result.predictions?.length">
+                <div class="rs-title">未来{{ result.predictions.length }}期预测（含95%置信区间）</div>
+                <el-table :data="result.predictions" stripe size="small" border>
+                  <el-table-column prop="date" label="日期" width="110" />
+                  <el-table-column prop="predicted" label="预测值" width="100">
+                    <template #default="{ row }">
+                      <span style="font-weight:600;color:#3a6fd8">{{ row.predicted }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="95%置信区间" min-width="140">
+                    <template #default="{ row }">
+                      [{{ row.lower_95 }}, {{ row.upper_95 }}]
+                    </template>
+                  </el-table-column>
                 </el-table>
               </div>
             </template>
@@ -553,7 +1027,11 @@ const groupValues = ref([])
 const funcNames = {
   descriptive: '描述统计', hypothesis: '假设检验', correlation: '相关分析',
   regression: '回归分析', timeseries: '时序分析', clustering: '聚类分析',
+  dbscan: 'DBSCAN密度聚类', logistic: '逻辑回归', pca: 'PCA主成分分析', arima: 'ARIMA时序预测',
 }
+
+// PCA模式：auto / manual
+const pcaAutoMode = ref('auto')
 
 const params = reactive({
   descriptive: { confidence: 0.95 },
@@ -562,21 +1040,27 @@ const params = reactive({
   regression: { y_col: '', x_cols: [] },
   timeseries: { date_col: '', value_col: '', periods: 5 },
   clustering: { k: 3, standardize: true },
+  dbscan: { eps: 0.5, min_samples: 5, standardize: true },
+  logistic: { y_col: '', x_cols: [], test_size: 0.2, random_state: 42 },
+  pca: { n_components: null, variance_threshold: 0.85 },
+  arima: { date_col: '', value_col: '', periods: 10, auto_order: true, p: 1, d: 1, q: 1 },
 })
 
 const canRun = computed(() => {
   if (!currentDatasetId.value) return false
-  if (activeFunc.value === 'descriptive' || activeFunc.value === 'correlation' || activeFunc.value === 'clustering') {
-    return selectedFields.value.length > 0
+  const needFields = ['descriptive', 'correlation', 'clustering', 'dbscan', 'pca']
+  if (needFields.includes(activeFunc.value)) {
+    return selectedFields.value.length >= 2 || (activeFunc.value === 'descriptive' && selectedFields.value.length > 0)
   }
-  if (activeFunc.value === 'regression') {
-    return params.regression.y_col && params.regression.x_cols.length > 0
-  }
-  if (activeFunc.value === 'timeseries') {
-    return params.timeseries.date_col && params.timeseries.value_col
-  }
+  if (activeFunc.value === 'regression') return params.regression.y_col && params.regression.x_cols.length > 0
+  if (activeFunc.value === 'timeseries') return params.timeseries.date_col && params.timeseries.value_col
+  if (activeFunc.value === 'logistic') return params.logistic.y_col && params.logistic.x_cols.length > 0
+  if (activeFunc.value === 'arima') return params.arima.date_col && params.arima.value_col
   return true
 })
+
+// 二分类候选字段（文本+数值，排除日期型——日期不适合做分类标签）
+const binaryCandidateFields = computed(() => [...textFields.value, ...numericFields.value])
 
 function toggleField(f) {
   const idx = selectedFields.value.indexOf(f)
@@ -619,10 +1103,10 @@ async function loadFields() {
 watch(() => params.hypothesis.group_col, async (col) => {
   if (!col || !currentDatasetId.value) { groupValues.value = []; return }
   try {
-    // 获取数据集前几行来提取分组值
-    const res = await statApi.getFields(currentDatasetId.value)
-    // 这里需要从后端获取，暂时用文本字段
-    groupValues.value = []
+    const res = await statApi.getColumnValues(currentDatasetId.value, col)
+    groupValues.value = res.data || []
+    params.hypothesis.group_a = ''
+    params.hypothesis.group_b = ''
   } catch { groupValues.value = [] }
 })
 
@@ -655,6 +1139,25 @@ async function handleRun() {
       case 'clustering':
         res = await statApi.clustering({ dataset_id: currentDatasetId.value, columns: selectedFields.value, ...params.clustering })
         break
+      case 'dbscan':
+        res = await statApi.dbscan({ dataset_id: currentDatasetId.value, columns: selectedFields.value, ...params.dbscan })
+        break
+      case 'logistic':
+        res = await statApi.logistic({ dataset_id: currentDatasetId.value, ...params.logistic })
+        break
+      case 'pca': {
+        const pcaP = {
+          dataset_id: currentDatasetId.value,
+          columns: selectedFields.value,
+          variance_threshold: params.pca.variance_threshold,
+          n_components: pcaAutoMode.value === 'manual' ? params.pca.n_components : null,
+        }
+        res = await statApi.pca(pcaP)
+        break
+      }
+      case 'arima':
+        res = await statApi.arima({ dataset_id: currentDatasetId.value, ...params.arima })
+        break
     }
 
     if (res.code === 200) {
@@ -678,6 +1181,12 @@ function getCorrStyle(r) {
   if (abs >= 0.5) return { background: r > 0 ? '#f0fdf4' : '#fff7ed', fontWeight: 600 }
   if (abs >= 0.3) return { background: r > 0 ? '#f7fef9' : '#fffbf5' }
   return {}
+}
+
+function getElbowBarWidth(sse, elbowData) {
+  if (!elbowData || !elbowData.length) return 0
+  const maxSse = Math.max(...elbowData.map(d => d.sse || 0))
+  return maxSse > 0 ? (sse / maxSse) * 100 : 0
 }
 
 function exportResult() {
@@ -815,6 +1324,18 @@ onMounted(() => { loadDatasets() })
 
 .hyp-result { margin-bottom: 16px; }
 
+.elbow-bar-wrap { position: relative; height: 18px; background: #f3f4f6; border-radius: 3px; overflow: hidden; }
+.elbow-bar { height: 100%; border-radius: 3px; transition: width 0.3s; min-width: 2px; }
+.elbow-bar-label { position: absolute; right: 6px; top: 1px; font-size: 10px; color: white; font-weight: 600; }
+
 .empty-state { display: flex; justify-content: center; align-items: center; height: 400px; }
 .header-actions { display: flex; align-items: center; gap: 10px; }
+
+/* 混淆矩阵 */
+.cm-grid { display: grid; gap: 2px; margin-top: 8px; }
+.cm-cell { padding: 10px 14px; text-align: center; border-radius: 4px; font-size: 13px; font-weight: 500; background: #f3f4f6; }
+.cm-header { background: #fafbfc; color: #6b7280; font-size: 12px; font-weight: 600; }
+.cm-tp { background: #dcfce7; color: #166534; font-size: 18px; font-weight: 700; }
+.cm-fp { background: #fef2f2; color: #991b1b; font-size: 18px; font-weight: 700; }
+.stat-badge-row { margin-top: 10px; }
 </style>
