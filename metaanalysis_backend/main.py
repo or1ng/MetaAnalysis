@@ -103,7 +103,7 @@ class SafeJSONResponse(JSONResponse):
 app = FastAPI(
     title=settings.APP_NAME,
     description="国内首款集成统计学内核+AI推理+自动化数据治理的新一代智能数据分析平台",
-    version="1.0.0",
+    version=settings.APP_VERSION,
     lifespan=lifespan,
     default_response_class=SafeJSONResponse,
 )
@@ -152,7 +152,7 @@ async def app_exception_handler(request: Request, exc: AppException):
 
 @app.get("/")
 async def root():
-    return {"app": settings.APP_NAME, "version": "1.0.0", "docs": "/docs"}
+    return {"app": settings.APP_NAME, "version": settings.APP_VERSION, "docs": "/docs"}
 
 
 @app.get("/health")
