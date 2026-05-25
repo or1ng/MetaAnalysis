@@ -1,7 +1,7 @@
 # MetaAnalysis 元析智能
 
 <p align="center">
-  <b>国内首款集成统计学内核 + AI推理 + 自动化数据治理的智能数据分析平台</b>
+  <b>集成统计学内核 + AI推理 + 自动化数据治理的智能数据分析平台</b>
 </p>
 
 <p align="center">
