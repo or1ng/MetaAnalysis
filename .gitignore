@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Backend local runtime
+metaanalysis_backend/.env
+metaanalysis_backend/metaanalysis.db
+metaanalysis_backend/uploads/
+
+# Node
+node_modules/
+dist/
+metaanalysis_frontend/node_modules/
+metaanalysis_frontend/dist/
+metaanalysis_frontend/.env.local
+metaanalysis_frontend/.env.*.local
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

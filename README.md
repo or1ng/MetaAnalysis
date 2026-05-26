@@ -132,6 +132,14 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 
+# 如需运行测试，安装开发依赖
+pip install -r requirements-dev.txt
+
+# 复制本地环境变量模板
+copy .env.example .env
+# macOS/Linux:
+# cp .env.example .env
+
 # 启动后端（8001 端口）
 python -m uvicorn main:app --host 0.0.0.0 --port 8001
 ```
@@ -151,6 +159,51 @@ npm run dev
 打开浏览器访问 `http://localhost:5173`
 
 > 前端通过 Vite Proxy 将 `/api/*` 请求转发到后端 8001 端口，无需手动配置跨域。
+
+---
+
+## 工程化补充
+
+### 环境配置
+
+- 后端环境变量模板：`metaanalysis_backend/.env.example`
+- 前端环境变量模板：`metaanalysis_frontend/.env.example`
+- 开发环境默认使用 SQLite：`sqlite+aiosqlite:///./metaanalysis.db`
+- 生产环境请更换 `SECRET_KEY`，并按实际部署环境配置 `DATABASE_URL`、`AI_API_KEY` 和 `CORS_ORIGINS`
+
+### 启动自检
+
+后端启动后可检查：
+
+```bash
+curl http://localhost:8001/health
+curl http://localhost:8001/
+```
+
+`/health` 应返回 `{"status":"ok"}`，根接口返回的 `version` 应与 `APP_VERSION` 一致。
+
+### 本地验证
+
+后端：
+
+```bash
+cd metaanalysis_backend
+pytest -q
+```
+
+前端：
+
+```bash
+cd metaanalysis_frontend
+npm run build
+```
+
+### CI
+
+仓库已补充 GitHub Actions：
+
+- `.github/workflows/backend-ci.yml`：安装后端依赖并运行 pytest
+- `.github/workflows/frontend-ci.yml`：安装前端依赖并运行 Vite build
 
 ---
 
@@ -184,6 +237,8 @@ npm run dev
 
 | 文档 | 说明 |
 |------|------|
+| [开发与验证指南](./docs/DEVELOPMENT.md) | 本地环境配置、启动自检、数据库说明和验证命令 |
+| [项目补齐清单](./docs/PROJECT_COMPLETION.md) | 当前工程化补齐内容与下一步建议 |
 | [VERSION-v2.0变更日志.md](./VERSION-v2.0变更日志.md) | v2.0 详细变更记录（文件级 diff） |
 | [技术架构文档-MVP一期.md](./MetaAnalysis技术架构文档-MVP一期.md) | MVP 一期技术选型、目录结构、接口设计 |
 | [产品多期规划.md](./MetaAnalysis产品多期规划.md) | 四期产品规划与功能全景对照表 |
